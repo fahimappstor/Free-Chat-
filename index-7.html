@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Chat - AI Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { height:100vh; display:flex; flex-direction:column; background:#f0f2f5; font-family:'Hind Siliguri',sans-serif; }
+
+/* Header */
+.header {
+  background:#fff;
+  border-bottom:1px solid #e0e0e0;
+  padding:12px 16px;
+  display:flex; align-items:center; gap:12px;
+  position:sticky; top:0; z-index:10;
+  box-shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+.header-logo { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#4285f4,#34a853); display:flex; align-items:center; justify-content:center; font-size:18px; }
+.header-info { flex:1; }
+.header-title { font-size:15px; font-weight:700; color:#1a1a1a; }
+.header-sub { font-size:11px; color:#888; }
+.model-select {
+  background:#f0f2f5; border:1px solid #ddd; border-radius:20px;
+  padding:6px 12px; font-size:12px; color:#333; outline:none;
+  font-family:'Hind Siliguri',sans-serif; cursor:pointer;
+}
+.new-chat-btn {
+  width:34px; height:34px; border-radius:50%; background:#f0f2f5;
+  border:1px solid #ddd; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:16px; color:#555;
+}
+
+/* Messages */
+.messages {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:12px;
+}
+
+.welcome {
+  text-align:center; padding:40px 20px;
+  color:#888; font-size:14px;
+}
+.welcome-icon { font-size:50px; margin-bottom:12px; }
+.welcome h2 { font-size:20px; color:#333; margin-bottom:8px; font-weight:700; }
+.welcome p { font-size:13px; color:#888; line-height:1.6; }
+
+.suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; }
+.suggestion-btn {
+  background:#fff; border:1px solid #ddd; border-radius:20px;
+  padding:8px 16px; font-size:12px; color:#555; cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif; transition:all 0.2s;
+}
+.suggestion-btn:hover { background:#e8f0fe; border-color:#4285f4; color:#4285f4; }
+
+/* Message bubbles */
+.msg-row { display:flex; gap:8px; align-items:flex-end; }
+.msg-row.user { flex-direction:row-reverse; }
+
+.avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.avatar.ai { background:linear-gradient(135deg,#4285f4,#34a853); color:#fff; }
+.avatar.user { background:linear-gradient(135deg,#ff6b6b,#ff8e53); color:#fff; }
+
+.bubble {
+  max-width:75%; padding:10px 14px; border-radius:18px;
+  font-size:14px; line-height:1.6; word-break:break-word;
+}
+.bubble.ai { background:#fff; color:#1a1a1a; border-bottom-left-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+.bubble.user { background:linear-gradient(135deg,#4285f4,#1a73e8); color:#fff; border-bottom-right-radius:4px; }
+
+.bubble pre { background:rgba(0,0,0,0.05); border-radius:8px; padding:10px; margin:8px 0; overflow-x:auto; font-size:12px; white-space:pre-wrap; }
+.bubble.user pre { background:rgba(255,255,255,0.15); }
+.bubble code { font-size:12px; background:rgba(0,0,0,0.06); padding:2px 5px; border-radius:4px; }
+.bubble.user code { background:rgba(255,255,255,0.2); }
+.bubble strong { font-weight:700; }
+.bubble ul, .bubble ol { padding-left:20px; margin:6px 0; }
+
+.msg-time { font-size:10px; color:#aaa; margin-top:4px; text-align:right; }
+.msg-row.user .msg-time { text-align:right; }
+
+/* Typing indicator */
+.typing { display:flex; gap:4px; padding:12px 16px; background:#fff; border-radius:18px; border-bottom-left-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.08); width:fit-content; }
+.typing span { width:8px; height:8px; border-radius:50%; background:#aaa; animation:bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay:0.2s; }
+.typing span:nth-child(3) { animation-delay:0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* Input area */
+.input-area {
+  background:#fff;
+  border-top:1px solid #e0e0e0;
+  padding:12px 16px;
+  display:flex; gap:8px; align-items:flex-end;
+}
+.input-wrap {
+  flex:1; background:#f0f2f5; border-radius:24px;
+  padding:10px 16px; display:flex; align-items:center; gap:8px;
+  border:1px solid transparent; transition:border 0.2s;
+}
+.input-wrap:focus-within { border-color:#4285f4; background:#fff; }
+#msgInput {
+  flex:1; border:none; background:transparent; outline:none;
+  font-size:14px; font-family:'Hind Siliguri',sans-serif;
+  color:#1a1a1a; resize:none; max-height:120px; min-height:20px;
+  line-height:1.5;
+}
+#msgInput::placeholder { color:#aaa; }
+.attach-btn { background:none; border:none; cursor:pointer; font-size:18px; color:#888; padding:2px; }
+.send-btn {
+  width:42px; height:42px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,#4285f4,#1a73e8);
+  color:#fff; font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; flex-shrink:0;
+}
+.send-btn:hover { transform:scale(1.05); }
+.send-btn:disabled { background:#ccc; cursor:not-allowed; transform:none; }
+
+/* Model badge */
+.model-badge {
+  display:inline-flex; align-items:center; gap:4px;
+  background:#e8f0fe; color:#4285f4; border-radius:10px;
+  padding:2px 8px; font-size:10px; font-weight:600; margin-bottom:4px;
+}
+
+/* Scrollbar */
+.messages::-webkit-scrollbar { width:4px; }
+.messages::-webkit-scrollbar-track { background:transparent; }
+.messages::-webkit-scrollbar-thumb { background:#ddd; border-radius:2px; }
+
+/* Copy btn */
+.copy-btn { background:none; border:none; cursor:pointer; font-size:12px; color:#aaa; padding:4px; margin-top:4px; }
+.copy-btn:hover { color:#4285f4; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">✨</div>
+  <div class="header-info">
+    <div class="header-title">Free Chat</div>
+    <div class="header-sub" id="statusText">প্রস্তুত</div>
+  </div>
+  <select class="model-select" id="modelSelect" onchange="updateModel()">
+    <option value="gemini-2.0-flash">Gemini 2.0 Flash ⚡</option>
+    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+    <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
+  </select>
+  <button class="new-chat-btn" onclick="newChat()" title="নতুন চ্যাট">✏️</button>
+</div>
+
+<div class="messages" id="messages">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">✨</div>
+    <h2>Free Chat এ স্বাগতম!</h2>
+    <p>আমি আপনার AI সহকারী। যেকোনো প্রশ্ন করুন বাংলায় বা ইংরেজিতে।</p>
+    <div class="suggestions">
+      <button class="suggestion-btn" onclick="sendSuggestion('বাংলাদেশের ইতিহাস সম্পর্কে বলো')">🏛️ বাংলাদেশের ইতিহাস</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('একটি সুন্দর কবিতা লিখো')">📝 কবিতা লিখো</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('Python programming শেখার সহজ উপায়')">💻 Programming শেখো</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('আজকের আবহাওয়া কেমন হতে পারে?')">🌤️ আবহাওয়া</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('ইসলামিক দোয়া শেখাও')">🕌 ইসলামিক দোয়া</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('রান্নার রেসিপি দাও')">🍳 রেসিপি</button>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrap">
+    <textarea id="msgInput" placeholder="এখানে লিখুন..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  </div>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+</div>
+
+<script>
+const API_KEY = "AIzaSyC6jtxhjYY8PK2Z0kTwDdFVNOjLyRfc82A";
+let currentModel = "gemini-2.0-flash";
+let chatHistory = [];
+let isLoading = false;
+
+function updateModel(){
+  currentModel = document.getElementById("modelSelect").value;
+  document.getElementById("statusText").textContent = currentModel.replace("gemini-","Gemini ").replace("-"," ");
+}
+
+function autoResize(el){
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+function handleKey(e){
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+}
+
+function getTime(){
+  return new Date().toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit"});
+}
+
+function formatText(text){
+  return text
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h3 style="margin:8px 0 4px;font-size:15px">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 style="margin:8px 0 4px;font-size:16px">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 style="margin:8px 0 4px;font-size:18px">$1</h1>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(role, text, model=""){
+  const welcome = document.getElementById("welcome");
+  if(welcome) welcome.remove();
+
+  const msgs = document.getElementById("messages");
+  const row = document.createElement("div");
+  row.className = `msg-row ${role}`;
+
+  const avatar = document.createElement("div");
+  avatar.className = `avatar ${role === "user" ? "user" : "ai"}`;
+  avatar.textContent = role === "user" ? "আপ" : "AI";
+
+  const msgWrap = document.createElement("div");
+
+  if(role === "ai" && model){
+    const badge = document.createElement("div");
+    badge.className = "model-badge";
+    badge.textContent = "✨ " + model;
+    msgWrap.appendChild(badge);
+  }
+
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${role === "user" ? "user" : "ai"}`;
+  bubble.innerHTML = role === "user" ? text.replace(/\n/g,"<br>") : formatText(text);
+
+  const time = document.createElement("div");
+  time.className = "msg-time";
+  time.textContent = getTime();
+
+  msgWrap.appendChild(bubble);
+  msgWrap.appendChild(time);
+
+  if(role === "user"){
+    row.appendChild(msgWrap); row.appendChild(avatar);
+  } else {
+    row.appendChild(avatar); row.appendChild(msgWrap);
+  }
+
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return bubble;
+}
+
+function addTyping(){
+  const welcome = document.getElementById("welcome");
+  if(welcome) welcome.remove();
+
+  const msgs = document.getElementById("messages");
+  const row = document.createElement("div");
+  row.className = "msg-row ai"; row.id = "typingRow";
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar ai"; avatar.textContent = "AI";
+
+  const typing = document.createElement("div");
+  typing.className = "typing";
+  typing.innerHTML = "<span></span><span></span><span></span>";
+
+  row.appendChild(avatar); row.appendChild(typing);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping(){
+  const t = document.getElementById("typingRow");
+  if(t) t.remove();
+}
+
+async function sendMessage(){
+  if(isLoading) return;
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+  if(!text) return;
+
+  input.value = ""; input.style.height = "auto";
+  isLoading = true;
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("statusText").textContent = "লিখছে...";
+
+  addMessage("user", text);
+  chatHistory.push({ role:"user", parts:[{text}] });
+
+  addTyping();
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${currentModel}:generateContent?key=${API_KEY}`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        contents: chatHistory,
+        systemInstruction: {
+          parts:[{text:"তুমি একজন সহায়ক AI সহকারী। বাংলায় প্রশ্ন করলে বাংলায়, ইংরেজিতে করলে ইংরেজিতে উত্তর দাও। সংক্ষিপ্ত ও স্পষ্ট উত্তর দাও।"}]
+        },
+        generationConfig:{ temperature:0.9, maxOutputTokens:2048 }
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if(data.candidates && data.candidates[0]){
+      const reply = data.candidates[0].content.parts[0].text;
+      chatHistory.push({ role:"model", parts:[{text:reply}] });
+      addMessage("ai", reply, currentModel.replace("gemini-","Gemini "));
+      document.getElementById("statusText").textContent = "প্রস্তুত";
+    } else if(data.error){
+      const errMsg = data.error.message || "";
+      let userMsg = "❌ ত্রুটি হয়েছে।";
+      if(errMsg.includes("quota") || errMsg.includes("exceeded")){
+        userMsg = "⏳ এই মডেলের ফ্রি লিমিট শেষ। একটু পরে আবার চেষ্টা করুন অথবা অন্য মডেল সিলেক্ট করুন।";
+      } else if(errMsg.includes("not found")){
+        userMsg = "❌ এই মডেলটি পাওয়া যাচ্ছে না। অন্য মডেল সিলেক্ট করুন।";
+      } else if(errMsg.includes("API_KEY")){
+        userMsg = "❌ API Key সমস্যা। Key চেক করুন।";
+      }
+      addMessage("ai", userMsg);
+      document.getElementById("statusText").textContent = "ত্রুটি";
+    }
+  } catch(e){
+    removeTyping();
+    addMessage("ai", "❌ সংযোগ সমস্যা। ইন্টারনেট চেক করুন।");
+    document.getElementById("statusText").textContent = "ত্রুটি";
+  }
+
+  isLoading = false;
+  document.getElementById("sendBtn").disabled = false;
+}
+
+function sendSuggestion(text){
+  document.getElementById("msgInput").value = text;
+  sendMessage();
+}
+
+function newChat(){
+  chatHistory = [];
+  const msgs = document.getElementById("messages");
+  msgs.innerHTML = `
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">✨</div>
+    <h2>Free Chat এ স্বাগতম!</h2>
+    <p>আমি আপনার AI সহকারী। যেকোনো প্রশ্ন করুন বাংলায় বা ইংরেজিতে।</p>
+    <div class="suggestions">
+      <button class="suggestion-btn" onclick="sendSuggestion('বাংলাদেশের ইতিহাস সম্পর্কে বলো')">🏛️ বাংলাদেশের ইতিহাস</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('একটি সুন্দর কবিতা লিখো')">📝 কবিতা লিখো</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('Python programming শেখার সহজ উপায়')">💻 Programming শেখো</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('আজকের আবহাওয়া কেমন হতে পারে?')">🌤️ আবহাওয়া</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('ইসলামিক দোয়া শেখাও')">🕌 ইসলামিক দোয়া</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('রান্নার রেসিপি দাও')">🍳 রেসিপি</button>
+    </div>
+  </div>`;
+  document.getElementById("statusText").textContent = "প্রস্তুত";
+}
+</script>
+</body>
+</html>
